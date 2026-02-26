@@ -1,0 +1,21 @@
+# Fonts — copy locally via download_fonts.py (not committed, Windows-only)
+backend/fonts/*.ttf
+backend/fonts/*.otf
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/.env
+backend/venv/
+backend/.venv/
+
+# General
+.DS_Store
+*.log
