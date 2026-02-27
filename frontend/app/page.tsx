@@ -13,12 +13,6 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/login"
-              className="text-sm text-gray-500 hover:text-gray-700 font-medium"
-            >
-              Sign In
-            </Link>
-            <Link
               href="/generate"
               className="bg-[#0f3460] text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-[#16213e] transition-colors"
             >
@@ -57,7 +51,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="text-xs text-white/40 mt-6">Free account. Settings saved to your profile. CSV data never stored.</p>
+          <p className="text-xs text-white/40 mt-6">Free. No sign-up required. Settings saved in your browser. CSV data never stored.</p>
         </div>
       </section>
 

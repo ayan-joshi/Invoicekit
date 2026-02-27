@@ -1,35 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Download as DownloadIcon, FileText, Archive, CheckCircle, History } from "lucide-react";
+import { Download as DownloadIcon, FileText, Archive, CheckCircle } from "lucide-react";
 import { Button } from "../ui/Button";
 import { InvoiceConfig } from "@/lib/types";
 import { generateInvoices } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
 import { clsx } from "clsx";
-import Link from "next/link";
 
 interface Props {
   csvFile: File;
   config: InvoiceConfig;
   logoFile: File | null;
   orderCount: number | null;
-  nextInvoiceNumber?: number;
-  onInvoiceNumberAdvanced?: (newNext: number) => void;
   onBack: () => void;
 }
 
 type Format = "zip" | "single";
 
-export function Download({
-  csvFile,
-  config,
-  logoFile,
-  orderCount,
-  nextInvoiceNumber,
-  onInvoiceNumberAdvanced,
-  onBack,
-}: Props) {
+export function Download({ csvFile, config, logoFile, orderCount, onBack }: Props) {
   const [format, setFormat] = useState<Format>("zip");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -40,19 +28,7 @@ export function Download({
     setError(null);
     setDone(false);
     try {
-      // Override invoice_start_number with the profile's running counter
-      const effectiveConfig: InvoiceConfig =
-        nextInvoiceNumber != null
-          ? {
-              ...config,
-              company: {
-                ...config.company,
-                invoice_start_number: nextInvoiceNumber,
-              },
-            }
-          : config;
-
-      const blob = await generateInvoices(csvFile, effectiveConfig, logoFile, format);
+      const blob = await generateInvoices(csvFile, config, logoFile, format);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -60,39 +36,6 @@ export function Download({
       a.click();
       URL.revokeObjectURL(url);
       setDone(true);
-
-      // Save batch history + advance invoice counter in Supabase
-      const count = orderCount ?? 0;
-      if (count > 0) {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          const fromNum = nextInvoiceNumber ?? 1;
-          const toNum = fromNum + count - 1;
-          const newNext = fromNum + count;
-
-          await Promise.all([
-            supabase.from("invoice_batches").insert({
-              user_id: user.id,
-              order_count: count,
-              format,
-              prefix: config.company.invoice_prefix || "",
-              from_number: fromNum,
-              to_number: toNum,
-            }),
-            supabase.from("profiles").upsert({
-              id: user.id,
-              next_invoice_number: newNext,
-              updated_at: new Date().toISOString(),
-            }),
-          ]);
-
-          onInvoiceNumberAdvanced?.(newNext);
-        }
-      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Generation failed. Please try again.");
     } finally {
@@ -106,12 +49,12 @@ export function Download({
         <h2 className="text-xl font-bold text-gray-900">Generate & Download</h2>
         <p className="text-sm text-gray-500 mt-1">
           {orderCount ? `Ready to generate ${orderCount} invoices.` : "Ready to generate invoices."}
-          {nextInvoiceNumber != null && config.company.invoice_prefix && (
+          {config.company.invoice_prefix && (
             <span className="ml-1 text-gray-400">
               Starting from{" "}
               <span className="font-mono text-gray-600">
                 {config.company.invoice_prefix}
-                {String(nextInvoiceNumber).padStart(3, "0")}
+                {String(config.company.invoice_start_number || 1).padStart(3, "0")}
               </span>
             </span>
           )}
@@ -199,14 +142,7 @@ export function Download({
       </div>
 
       {done && (
-        <div className="flex flex-col items-center gap-2">
-          <Link
-            href="/history"
-            className="flex items-center gap-1.5 text-sm text-[#0f3460] hover:underline"
-          >
-            <History className="w-4 h-4" />
-            View invoice history
-          </Link>
+        <div className="flex justify-center">
           <Button variant="ghost" size="sm" onClick={() => { setDone(false); onBack(); }}>
             ← Start over with a new file
           </Button>
