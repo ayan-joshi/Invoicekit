@@ -11,6 +11,8 @@ export interface CompanyConfig {
   shipped_from: string;
   hsn_code: string;
   transport_mode: string;
+  invoice_prefix: string;
+  invoice_start_number: number;
 }
 
 export interface TaxRule {
@@ -47,6 +49,8 @@ export const DEFAULT_COMPANY: CompanyConfig = {
   shipped_from: "",
   hsn_code: "",
   transport_mode: "Courier",
+  invoice_prefix: "INV-",
+  invoice_start_number: 1,
 };
 
 // Indian states list for dropdown

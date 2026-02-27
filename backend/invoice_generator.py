@@ -64,6 +64,11 @@ W, H = A4  # 595.27 x 841.89 pts
 
 def build_invoice_pdf(order: dict, config: dict, logo_bytes: bytes | None = None) -> bytes:
     """Build a single invoice PDF and return as bytes."""
+    company_conf = config.get("company", {})
+    prefix = company_conf.get("invoice_prefix", "")
+    start = company_conf.get("invoice_start_number", None)
+    if prefix and start is not None:
+        order = {**order, "invoice_number": f"{prefix}{int(start):03d}"}
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -82,6 +87,9 @@ def build_invoice_pdf(order: dict, config: dict, logo_bytes: bytes | None = None
 def build_bulk_pdf(orders: list[dict], config: dict, logo_bytes: bytes | None = None) -> bytes:
     """Merge all orders into one PDF and return as bytes."""
     from reportlab.platypus import PageBreak
+    company_conf = config.get("company", {})
+    prefix = company_conf.get("invoice_prefix", "")
+    start = company_conf.get("invoice_start_number", None)
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -93,6 +101,8 @@ def build_bulk_pdf(orders: list[dict], config: dict, logo_bytes: bytes | None = 
     )
     story = []
     for i, order in enumerate(orders):
+        if prefix and start is not None:
+            order = {**order, "invoice_number": f"{prefix}{int(start) + i:03d}"}
         tax = compute_tax_breakdown(order, config)
         story.extend(_build_story(order, config, tax, logo_bytes))
         if i < len(orders) - 1:
@@ -185,7 +195,7 @@ def _header(company: dict, logo_bytes: bytes | None) -> list:
 # ---------------------------------------------------------------------------
 
 def _invoice_meta(order: dict) -> list:
-    inv_no = order["order_number"].lstrip("#")
+    inv_no = order.get("invoice_number") or order["order_number"].lstrip("#")
     created = order.get("created_at", "")[:10]
 
     data = [

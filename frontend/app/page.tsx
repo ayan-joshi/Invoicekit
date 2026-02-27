@@ -11,12 +11,20 @@ export default function LandingPage() {
             <FileText className="w-6 h-6" />
             InvoiceKit
           </div>
-          <Link
-            href="/generate"
-            className="bg-[#0f3460] text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-[#16213e] transition-colors"
-          >
-            Get Started Free →
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/generate"
+              className="bg-[#0f3460] text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-[#16213e] transition-colors"
+            >
+              Get Started Free →
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -49,7 +57,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="text-xs text-white/40 mt-6">No signup. No subscription. No data stored.</p>
+          <p className="text-xs text-white/40 mt-6">Free account. Settings saved to your profile. CSV data never stored.</p>
         </div>
       </section>
 
@@ -167,7 +175,7 @@ export default function LandingPage() {
           href="/generate"
           className="inline-block bg-[#0f3460] hover:bg-[#16213e] text-white font-bold text-lg px-10 py-4 rounded-xl transition-colors shadow-lg"
         >
-          Generate Invoices — Free →
+          Get Started Free →
         </Link>
       </section>
 

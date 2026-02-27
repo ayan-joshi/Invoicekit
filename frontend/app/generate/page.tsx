@@ -8,8 +8,9 @@ import { UploadCSV } from "@/components/steps/UploadCSV";
 import { Preview } from "@/components/steps/Preview";
 import { Download } from "@/components/steps/Download";
 import { CompanyConfig, DEFAULT_COMPANY, InvoiceConfig, TaxRule, WizardStep } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { FileText, History, LogOut } from "lucide-react";
 
 const LS_COMPANY = "ik_company";
 const LS_RULES = "ik_tax_rules";
@@ -31,27 +32,92 @@ export default function GeneratePage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [nextInvoiceNumber, setNextInvoiceNumber] = useState<number>(1);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Load persisted config on mount
+  // Load persisted config on mount — Supabase profile first, localStorage fallback
   useEffect(() => {
-    setCompany(loadFromStorage(LS_COMPANY, DEFAULT_COMPANY));
-    setTaxRules(loadFromStorage(LS_RULES, []));
+    async function loadProfile() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserEmail(user.email ?? null);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          if (profile.company) {
+            setCompany(profile.company as CompanyConfig);
+            localStorage.setItem(LS_COMPANY, JSON.stringify(profile.company));
+          }
+          if (profile.tax_rules) {
+            setTaxRules(profile.tax_rules as TaxRule[]);
+            localStorage.setItem(LS_RULES, JSON.stringify(profile.tax_rules));
+          }
+          setNextInvoiceNumber(profile.next_invoice_number ?? 1);
+          return;
+        }
+      }
+
+      // No Supabase profile yet — fall back to localStorage
+      setCompany(loadFromStorage(LS_COMPANY, DEFAULT_COMPANY));
+      setTaxRules(loadFromStorage(LS_RULES, []));
+    }
+
+    loadProfile();
   }, []);
 
-  // Persist whenever changed
-  const saveCompany = useCallback((c: CompanyConfig) => {
+  const saveCompany = useCallback(async (c: CompanyConfig) => {
     setCompany(c);
     localStorage.setItem(LS_COMPANY, JSON.stringify(c));
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        company: c,
+        updated_at: new Date().toISOString(),
+      });
+    }
   }, []);
 
-  const saveRules = useCallback((r: TaxRule[]) => {
+  const saveRules = useCallback(async (r: TaxRule[]) => {
     setTaxRules(r);
     localStorage.setItem(LS_RULES, JSON.stringify(r));
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        tax_rules: r,
+        updated_at: new Date().toISOString(),
+      });
+    }
   }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   function handleFileChange(file: File | null, count: number | null) {
     setCsvFile(file);
     setOrderCount(count);
+  }
+
+  function handleInvoiceNumberAdvanced(newNext: number) {
+    setNextInvoiceNumber(newNext);
   }
 
   const config: InvoiceConfig = { company, tax_rules: taxRules };
@@ -65,7 +131,26 @@ export default function GeneratePage() {
             <FileText className="w-5 h-5" />
             InvoiceKit
           </Link>
-          <span className="text-xs text-gray-500">Step {step} of 5</span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/history"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700"
+            >
+              <History className="w-4 h-4" />
+              History
+            </Link>
+            {userEmail && (
+              <span className="text-xs text-gray-400 hidden sm:block">{userEmail}</span>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-gray-500">Step {step} of 5</span>
+          </div>
         </div>
       </header>
 
@@ -118,6 +203,8 @@ export default function GeneratePage() {
               config={config}
               logoFile={logoFile}
               orderCount={orderCount}
+              nextInvoiceNumber={nextInvoiceNumber}
+              onInvoiceNumberAdvanced={handleInvoiceNumberAdvanced}
               onBack={() => setStep(4)}
             />
           )}

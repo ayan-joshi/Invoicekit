@@ -18,11 +18,11 @@ export function CompanySetup({ company, onChange, logoFile, onLogoChange, onNext
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-  function set(key: keyof CompanyConfig, value: string) {
+  function set(key: keyof CompanyConfig, value: string | number) {
     // Auto-fill state code when state is selected
     if (key === "seller_state") {
       const match = INDIAN_STATES.find((s) => s.name === value);
-      onChange({ ...company, seller_state: value, seller_state_code: match?.code || "" });
+      onChange({ ...company, seller_state: value as string, seller_state_code: match?.code || "" });
     } else {
       onChange({ ...company, [key]: value });
     }
@@ -48,6 +48,10 @@ export function CompanySetup({ company, onChange, logoFile, onLogoChange, onNext
   function isValid() {
     return company.name && company.gstin && company.address && company.seller_state;
   }
+
+  const exampleInvoiceNumber = `${company.invoice_prefix || "INV-"}${String(
+    company.invoice_start_number || 1
+  ).padStart(3, "0")}`;
 
   return (
     <div className="space-y-6">
@@ -165,6 +169,40 @@ export function CompanySetup({ company, onChange, logoFile, onLogoChange, onNext
             onChange={(e) => set("shipped_from", e.target.value)}
             placeholder="Unit 7, MIDC Industrial Area, Andheri, Mumbai"
           />
+        </div>
+      </div>
+
+      {/* Invoice Numbering */}
+      <div className="border border-gray-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Invoice Numbering</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Set a custom prefix and starting number. The counter auto-increments after each batch.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Invoice Prefix"
+            value={company.invoice_prefix}
+            onChange={(e) => set("invoice_prefix", e.target.value)}
+            placeholder="INV-2025-"
+            hint="e.g. INV-, INV-2025-, GST-"
+          />
+          <Input
+            label="Starting Number"
+            type="number"
+            value={String(company.invoice_start_number)}
+            onChange={(e) => set("invoice_start_number", Math.max(1, parseInt(e.target.value) || 1))}
+            placeholder="1"
+            hint="First invoice number in the next batch"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span>Preview:</span>
+          <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+            {exampleInvoiceNumber}
+          </span>
+          <span className="text-gray-400">→ zero-padded to 3 digits</span>
         </div>
       </div>
 
