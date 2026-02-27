@@ -1,7 +1,3 @@
-# Fonts — copy locally via download_fonts.py (not committed, Windows-only)
-backend/fonts/*.ttf
-backend/fonts/*.otf
-
 # Frontend
 frontend/node_modules/
 frontend/.next/
