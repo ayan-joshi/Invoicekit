@@ -5,7 +5,7 @@ import { Download as DownloadIcon, FileText, Archive, CheckCircle } from "lucide
 import { Button } from "../ui/Button";
 import { InvoiceConfig } from "@/lib/types";
 import { generateInvoices } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { clsx } from "clsx";
 
 interface Props {
@@ -43,22 +43,24 @@ export function Download({ csvFile, config, logoFile, orderCount, onBack, onGene
       const fromNumber = config.company.invoice_start_number || 1;
       const toNumber = fromNumber + count - 1;
 
-      // Log batch to Supabase if user is signed in (non-fatal)
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from("invoice_batches").insert({
-            user_id: user.id,
-            order_count: count,
-            format,
-            prefix: config.company.invoice_prefix || "",
-            from_number: fromNumber,
-            to_number: toNumber,
-          });
+      // Log batch to Supabase if configured and user is signed in (non-fatal)
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from("invoice_batches").insert({
+              user_id: user.id,
+              order_count: count,
+              format,
+              prefix: config.company.invoice_prefix || "",
+              from_number: fromNumber,
+              to_number: toNumber,
+            });
+          }
+        } catch {
+          // Non-fatal — history logging failure must not block download
         }
-      } catch {
-        // Non-fatal — history logging failure must not block download
       }
 
       // Auto-advance invoice start number for next batch

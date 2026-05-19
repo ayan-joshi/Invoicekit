@@ -8,7 +8,7 @@ import { UploadCSV } from "@/components/steps/UploadCSV";
 import { Preview } from "@/components/steps/Preview";
 import { Download } from "@/components/steps/Download";
 import { CompanyConfig, DEFAULT_COMPANY, InvoiceConfig, TaxRule, WizardStep } from "@/lib/types";
-import { createClient } from "@/lib/supabase";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import Link from "next/link";
 import { FileText, History, LogIn } from "lucide-react";
 
@@ -38,9 +38,11 @@ export default function GeneratePage() {
   useEffect(() => {
     setCompany(loadFromStorage(LS_COMPANY, DEFAULT_COMPANY));
     setTaxRules(loadFromStorage(LS_RULES, []));
-    createClient().auth.getUser().then(({ data: { user } }) => {
-      setUserEmail(user?.email ?? null);
-    });
+    if (isSupabaseConfigured()) {
+      createClient().auth.getUser().then(({ data: { user } }) => {
+        setUserEmail(user?.email ?? null);
+      });
+    }
   }, []);
 
   const saveCompany = useCallback((c: CompanyConfig) => {
