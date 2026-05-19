@@ -5,6 +5,7 @@ import { Download as DownloadIcon, FileText, Archive, CheckCircle } from "lucide
 import { Button } from "../ui/Button";
 import { InvoiceConfig } from "@/lib/types";
 import { generateInvoices } from "@/lib/api";
+import { createClient } from "@/lib/supabase";
 import { clsx } from "clsx";
 
 interface Props {
@@ -13,11 +14,12 @@ interface Props {
   logoFile: File | null;
   orderCount: number | null;
   onBack: () => void;
+  onGenerated: (count: number) => void;
 }
 
 type Format = "zip" | "single";
 
-export function Download({ csvFile, config, logoFile, orderCount, onBack }: Props) {
+export function Download({ csvFile, config, logoFile, orderCount, onBack, onGenerated }: Props) {
   const [format, setFormat] = useState<Format>("zip");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -36,6 +38,31 @@ export function Download({ csvFile, config, logoFile, orderCount, onBack }: Prop
       a.click();
       URL.revokeObjectURL(url);
       setDone(true);
+
+      const count = orderCount || 0;
+      const fromNumber = config.company.invoice_start_number || 1;
+      const toNumber = fromNumber + count - 1;
+
+      // Log batch to Supabase if user is signed in (non-fatal)
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("invoice_batches").insert({
+            user_id: user.id,
+            order_count: count,
+            format,
+            prefix: config.company.invoice_prefix || "",
+            from_number: fromNumber,
+            to_number: toNumber,
+          });
+        }
+      } catch {
+        // Non-fatal — history logging failure must not block download
+      }
+
+      // Auto-advance invoice start number for next batch
+      onGenerated(count);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Generation failed. Please try again.");
     } finally {

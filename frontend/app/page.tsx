@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Upload, Eye, Download, CheckCircle, Zap, ShieldCheck, Package } from "lucide-react";
+import { FileText, Upload, Eye, Download, CheckCircle, Zap, ShieldCheck, Package, Check } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -12,6 +12,9 @@ export default function LandingPage() {
             InvoiceKit
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
+              Sign In
+            </Link>
             <Link
               href="/generate"
               className="bg-[#0f3460] text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-[#16213e] transition-colors"
@@ -51,7 +54,7 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="text-xs text-white/40 mt-6">Free. No sign-up required. Settings saved in your browser. CSV data never stored.</p>
+          <p className="text-xs text-white/40 mt-6">No sign-up required to start. Settings saved in your browser. CSV data never stored on our servers.</p>
         </div>
       </section>
 
@@ -157,13 +160,76 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section className="max-w-4xl mx-auto px-4 py-20">
+        <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">Simple pricing</h2>
+        <p className="text-center text-gray-500 mb-12">Start free. Upgrade when you need more.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          {/* Free */}
+          <div className="border border-gray-200 rounded-2xl p-8 bg-white">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Free</p>
+            <p className="text-4xl font-extrabold text-gray-900 mb-1">₹0</p>
+            <p className="text-sm text-gray-400 mb-6">forever</p>
+            <ul className="space-y-3 mb-8">
+              {[
+                "Up to 50 orders per batch",
+                "CGST / SGST / IGST auto-detection",
+                "Logo + custom prefix",
+                "ZIP or merged PDF",
+                "No sign-up required",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                  <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/generate"
+              className="block text-center border border-[#0f3460] text-[#0f3460] font-semibold py-2.5 rounded-xl hover:bg-[#0f3460]/5 transition-colors text-sm"
+            >
+              Start for free
+            </Link>
+          </div>
+
+          {/* Pro */}
+          <div className="border-2 border-[#0f3460] rounded-2xl p-8 bg-[#0f3460] text-white relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e94560] text-white text-xs font-bold px-3 py-1 rounded-full">
+              MOST POPULAR
+            </div>
+            <p className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-1">Pro</p>
+            <p className="text-4xl font-extrabold mb-1">₹499</p>
+            <p className="text-sm text-white/50 mb-6">per month</p>
+            <ul className="space-y-3 mb-8">
+              {[
+                "Unlimited orders per batch",
+                "Invoice history & records",
+                "Priority email support",
+                "Everything in Free",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-white/90">
+                  <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/login"
+              className="block text-center bg-white text-[#0f3460] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-colors text-sm"
+            >
+              Get Pro →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
-      <section className="py-20 text-center px-4">
+      <section className="py-20 text-center px-4 bg-gray-50 border-t border-gray-100">
         <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
           Ready to stop doing invoices manually?
         </h2>
         <p className="text-gray-500 mb-8 max-w-md mx-auto">
-          Takes 2 minutes to set up. Works for any Indian state. Free, forever.
+          Takes 2 minutes to set up. Works for any Indian state.
         </p>
         <Link
           href="/generate"

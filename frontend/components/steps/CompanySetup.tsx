@@ -45,8 +45,11 @@ export function CompanySetup({ company, onChange, logoFile, onLogoChange, onNext
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  const gstinValid = !company.gstin || gstinRegex.test(company.gstin);
+
   function isValid() {
-    return company.name && company.gstin && company.address && company.seller_state;
+    return company.name && company.gstin && gstinRegex.test(company.gstin) && company.address && company.seller_state;
   }
 
   const exampleInvoiceNumber = `${company.invoice_prefix || "INV-"}${String(
@@ -92,14 +95,24 @@ export function CompanySetup({ company, onChange, logoFile, onLogoChange, onNext
           onChange={(e) => set("name", e.target.value)}
           placeholder="Aryan Traders Pvt Ltd"
         />
-        <Input
-          label="GSTIN"
-          required
-          value={company.gstin}
-          onChange={(e) => set("gstin", e.target.value.toUpperCase())}
-          placeholder="27AABCU9603R1ZX"
-          maxLength={15}
-        />
+        <div className="flex flex-col gap-1">
+          <Input
+            label="GSTIN"
+            required
+            value={company.gstin}
+            onChange={(e) => set("gstin", e.target.value.toUpperCase())}
+            placeholder="27AABCU9603R1ZX"
+            maxLength={15}
+          />
+          {company.gstin && !gstinValid && (
+            <p className="text-xs text-red-500">
+              Invalid GSTIN format. Must be 15 characters: e.g. 27AABCU9603R1ZX
+            </p>
+          )}
+          {company.gstin && gstinValid && (
+            <p className="text-xs text-green-600">Valid GSTIN format</p>
+          )}
+        </div>
         <div className="sm:col-span-2">
           <Input
             label="Registered Address"

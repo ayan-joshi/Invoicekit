@@ -8,8 +8,9 @@ import { UploadCSV } from "@/components/steps/UploadCSV";
 import { Preview } from "@/components/steps/Preview";
 import { Download } from "@/components/steps/Download";
 import { CompanyConfig, DEFAULT_COMPANY, InvoiceConfig, TaxRule, WizardStep } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { FileText, History, LogIn } from "lucide-react";
 
 const LS_COMPANY = "ik_company";
 const LS_RULES = "ik_tax_rules";
@@ -31,11 +32,15 @@ export default function GeneratePage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Load persisted config from localStorage on mount
+  // Load persisted config from localStorage on mount + check auth
   useEffect(() => {
     setCompany(loadFromStorage(LS_COMPANY, DEFAULT_COMPANY));
     setTaxRules(loadFromStorage(LS_RULES, []));
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
   }, []);
 
   const saveCompany = useCallback((c: CompanyConfig) => {
@@ -53,6 +58,12 @@ export default function GeneratePage() {
     setOrderCount(count);
   }
 
+  // Auto-increment invoice_start_number after each successful batch
+  function handleGenerated(count: number) {
+    const next = { ...company, invoice_start_number: (company.invoice_start_number || 1) + count };
+    saveCompany(next);
+  }
+
   const config: InvoiceConfig = { company, tax_rules: taxRules };
 
   return (
@@ -64,7 +75,20 @@ export default function GeneratePage() {
             <FileText className="w-5 h-5" />
             InvoiceKit
           </Link>
-          <span className="text-xs text-gray-500">Step {step} of 5</span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-400">Step {step} of 5</span>
+            {userEmail ? (
+              <Link href="/history" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#0f3460] transition-colors">
+                <History className="w-3.5 h-3.5" />
+                History
+              </Link>
+            ) : (
+              <Link href="/login" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#0f3460] transition-colors">
+                <LogIn className="w-3.5 h-3.5" />
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -118,6 +142,7 @@ export default function GeneratePage() {
               logoFile={logoFile}
               orderCount={orderCount}
               onBack={() => setStep(4)}
+              onGenerated={handleGenerated}
             />
           )}
         </div>
